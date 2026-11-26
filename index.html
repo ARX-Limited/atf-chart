@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SOFR, EURIBOR and the spread · ARX</title>
+<style>
+*{box-sizing:border-box}body{margin:0;color:#1b2026;background:#fff;font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}header{border-bottom:1px solid #dfe4e8;padding:16px max(6vw,20px);display:flex;gap:20px;align-items:center}header b{font-size:23px;letter-spacing:.06em;color:#236fac}header span{color:#555f69;border-left:1px solid #ccd3d9;padding-left:19px}main{max-width:1120px;margin:50px auto;padding:0 24px}h1{letter-spacing:-.035em;font-size:clamp(28px,4vw,42px);line-height:1.15;margin:0}p{color:#606871;margin:8px 0 24px}.legend{display:flex;gap:6px 18px;flex-wrap:wrap}button{background:white;color:inherit;font:inherit;border:0;cursor:pointer;padding:7px 0}button[aria-pressed=false]{opacity:.55;text-decoration:line-through}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px}svg{display:block;width:100%;height:clamp(290px,44vw,420px);touch-action:pan-y}svg text{font-size:13px;fill:#656c74}.plot{position:relative}.tip{position:absolute;pointer-events:none;background:white;box-shadow:0 4px 22px #17263718;border:1px solid #dce0e4;padding:10px 14px;border-radius:9px;font-size:13px}.tip div{display:flex;align-items:center;gap:4px}.tip strong{margin-left:auto;padding-left:12px;font-variant-numeric:tabular-nums}.detail{display:flex;gap:8px 24px;flex-wrap:wrap;font-size:14px}footer{margin-top:28px;border-top:1px solid #dce0e4;padding-top:14px;font-size:13px;color:#59636b}a{color:#246ba2}input{width:min(240px,50vw);vertical-align:middle}label{font-size:14px}button:focus-visible,input:focus-visible{outline:2px solid #236fac}
+</style>
+<header><b>ARX</b><span>Trade Finance</span></header>
+<main><h1>SOFR, EURIBOR and the spread</h1><p>Monthly averages · November 2021 to November 2026 · November through 24 Nov (partial)</p><div class="legend" aria-label="Chart series"></div><div class="plot"><svg role="img" aria-label="Monthly US dollar, euro and Swiss franc benchmarks and SOFR minus EURIBOR spread"></svg><div class="tip" hidden></div></div>
+<label>Month <input type="range" min="0" max="60" value="60"></label> <output id="month"></output><div class="detail" aria-live="polite"></div>
+<footer>Updated 25 Nov 2026. November uses available business-day fixings through 24 Nov for each benchmark. Spread = overnight SOFR minus 3-month EURIBOR, in percentage points.<br>Historical rates: <a href="https://www.global-rates.com/en/interest-rates/sofr/">SOFR</a> · <a href="https://euribor-rates.info/en/euribor-rate/3-month-rate/">EURIBOR</a> · <a href="https://www.global-rates.com/en/interest-rates/saron/">SARON</a></footer></main>
+<script>
+const sofr=[.05,.05,.05,.05,.16,.29,.72,1.1,1.61,2.28,2.51,3.04,3.72,4.07,4.3,4.54,4.64,4.81,5.02,5.06,5.09,5.3,5.31,5.31,5.32,5.34,5.32,5.31,5.31,5.32,5.31,5.33,5.34,5.33,5.15,4.85,4.64,4.53,4.32,4.34,4.33,4.35,4.31,4.32,4.34,4.34,4.3,4.2,3.98,3.8,3.66,3.67,3.65,3.64,3.59,3.63,3.62,3.64,3.75,3.9,3.9175];
+const euribor=[-.567,-.583,-.56,-.532,-.493,-.448,-.386,-.239,.037,.395,1.011,1.428,1.825,2.063,2.345,2.64,2.911,3.179,3.372,3.536,3.672,3.78,3.88,3.968,3.972,3.935,3.925,3.923,3.923,3.885,3.813,3.725,3.685,3.548,3.434,3.167,3.007,2.825,2.704,2.525,2.442,2.249,2.089,1.984,1.986,2.021,2.027,2.034,2.042,2.048,2.028,2.011,2.109,2.175,2.226,2.339,2.425,2.513,2.635,2.635,2.78452941];
+const saron=[-.7085,-.7008,-.7094,-.7143,-.7022,-.7076,-.7076,-.4563,-.2081,-.2087,-.0467,.4451,.4544,.6884,.9419,.9448,1.0532,1.409,1.4264,1.5162,1.7037,1.7039,1.7052,1.7005,1.7017,1.6992,1.6922,1.6923,1.6362,1.451,1.4502,1.3801,1.2091,1.2076,1.1841,.9434,.9533,.6768,.4399,.4378,.3614,.1971,.2042,.1161,-.0439,-.041,-.0381,-.0429,-.0413,-.0414,-.058,-.0496,-.0513,-.0415,-.0457,-.0388,-.0407,-.0579,-.0407,-.0482,-0.03891829];
+const series=[
+ ['Overnight SOFR (USD)',sofr,'#4b90ef',2,'%'],
+ ['3-month EURIBOR (EUR)',euribor,'#50a76a',3,'%'],
+ ['SOFR minus EURIBOR (pp)',sofr.map((v,i)=>v-euribor[i]),'#e97d42',3,' pp'],
+ ['Overnight SARON (CHF)',saron,'#7963a6',4,'%']
+].map(([name,values,color,precision,unit])=>({name,values,color,precision,unit,visible:true}));
+const $=q=>document.querySelector(q),svg=$('svg'),slider=$('input'),tip=$('.tip');
+const formatMonth=new Intl.DateTimeFormat('en',{month:'short',year:'numeric',timeZone:'UTC'});
+const month=i=>formatMonth.format(new Date(Date.UTC(2021,10+i,1)));
+const swatch=s=>'<i class="dot" style="background:'+s.color+'"></i>';
+const value=(s,i)=>s.values[i].toFixed(s.precision)+s.unit;
+const lastMonth=sofr.length-1;
+slider.max=lastMonth;
+let selected=lastMonth,hover=false;
+series.forEach(s=>{const b=document.createElement('button');b.type='button';b.innerHTML=swatch(s)+s.name;b.setAttribute('aria-pressed','true');b.onclick=()=>{s.visible=!s.visible;b.setAttribute('aria-pressed',s.visible);draw()};$('.legend').append(b)});
+function draw(){
+ const w=svg.clientWidth,h=svg.clientHeight,left=36,right=w-12,bottom=h-36,top=20;
+ const x=i=>left+(right-left)*i/lastMonth,y=v=>top+(6-v)*(bottom-top)/8;
+ let marks='';
+ for(const v of [-2,0,2,4,6])marks+='<line x1="'+left+'" x2="'+right+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="#e2e6e9" stroke-dasharray="4 5"/><text x="'+(left-8)+'" y="'+(y(v)+4)+'" text-anchor="end">'+v+'</text>';
+ const ticks=w<550?[0,30,lastMonth]:[0,12,24,36,48,lastMonth];
+ ticks.forEach(i=>{marks+='<text x="'+x(i)+'" y="'+(bottom+23)+'" text-anchor="'+(i===0?'start':i===lastMonth?'end':'middle')+'">'+month(i)+'</text>'});
+ const active=series.filter(s=>s.visible);
+ for(const s of active)marks+='<polyline fill="none" stroke="'+s.color+'" stroke-width="3" stroke-linejoin="round" points="'+s.values.map((v,i)=>x(i)+','+y(v)).join(' ')+'"/>';
+ marks+='<line x1="'+x(selected)+'" x2="'+x(selected)+'" y1="'+top+'" y2="'+bottom+'" stroke="#c1c8ce"/>';
+ for(const s of active)marks+='<circle cx="'+x(selected)+'" cy="'+y(s.values[selected])+'" r="5" fill="'+s.color+'" stroke="white" stroke-width="2"/>';
+ svg.setAttribute('viewBox','0 0 '+w+' '+h);svg.innerHTML=marks;
+ slider.value=selected;slider.setAttribute('aria-valuetext',month(selected));$('#month').textContent=month(selected);
+ $('.detail').innerHTML=active.map(s=>'<span>'+swatch(s)+s.name+' <b>'+value(s,selected)+'</b></span>').join('');
+ tip.hidden=!hover||!active.length;
+ if(!tip.hidden){tip.innerHTML='<b>'+month(selected)+'</b>'+active.map(s=>'<div>'+swatch(s)+s.name+'<strong>'+value(s,selected)+'</strong></div>').join('');tip.style.top='24px';tip.style.left=Math.max(0,Math.min(w-tip.offsetWidth,x(selected)+(x(selected)>w/2?-tip.offsetWidth-12:12)))+'px'}
+}
+function point(e){selected=Math.max(0,Math.min(lastMonth,Math.round((e.clientX-svg.getBoundingClientRect().left-36)/(svg.clientWidth-48)*lastMonth)));hover=true;draw()}
+svg.onpointermove=point;svg.onpointerdown=point;svg.onpointerleave=()=>{hover=false;draw()};slider.oninput=()=>{selected=Number(slider.value);hover=false;draw()};new ResizeObserver(draw).observe(svg);draw();
+</script></html>
