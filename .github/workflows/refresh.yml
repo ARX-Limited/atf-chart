@@ -1,0 +1,31 @@
+name: Refresh ATF observations
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 9,19 * * *'
+  push:
+    branches: [main]
+    paths: ['scripts/refresh.py', '.github/workflows/refresh.yml']
+permissions:
+  contents: write
+concurrency:
+  group: atf-observations
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: python3 scripts/refresh.py
+      - name: Publish updated observations
+        run: |
+          if ! git diff --quiet -- index.html; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add index.html
+            git commit -m 'Refresh matched-tenor benchmark observations'
+            git push origin HEAD:main
+          fi
