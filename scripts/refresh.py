@@ -30,7 +30,7 @@ class TableRows(HTMLParser):
     def handle_starttag(self, tag, attrs):
         if tag == "tr":
             self.row = []
-        elif tag == "td":
+        elif tag in ("th", "td"):
             self.cell = []
 
     def handle_data(self, text):
@@ -38,7 +38,7 @@ class TableRows(HTMLParser):
             self.cell.append(text)
 
     def handle_endtag(self, tag):
-        if tag == "td" and self.cell is not None:
+        if tag in ("th", "td") and self.cell is not None:
             self.row.append("".join(self.cell).strip())
             self.cell = None
         elif tag == "tr" and self.row:
