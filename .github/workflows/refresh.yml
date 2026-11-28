@@ -2,7 +2,7 @@ name: Refresh ATF observations
 on:
   workflow_dispatch:
   schedule:
-    - cron: '30 9,19 * * *'
+    - cron: '30 9,19 * * 1-5'
   push:
     branches: [main]
     paths: ['scripts/refresh.py', '.github/workflows/refresh.yml']
