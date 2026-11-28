@@ -3,9 +3,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '30 9,19 * * 1-5'
-  push:
-    branches: [main]
-    paths: ['scripts/refresh.py', '.github/workflows/refresh.yml']
 permissions:
   contents: write
 concurrency:
@@ -19,8 +16,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
-      - run: python3 scripts/refresh.py
+      - name: Check TARGET business day
+        id: calendar
+        run: echo "open=$(python3 scripts/business_day.py "$(TZ=America/Sao_Paulo date +%F)")" >> "$GITHUB_OUTPUT"
+      - if: steps.calendar.outputs.open == 'true'
+        run: python3 scripts/refresh.py
       - name: Publish updated observations
+        if: steps.calendar.outputs.open == 'true'
         run: |
           if ! git diff --quiet -- index.html; then
             git config user.name 'github-actions[bot]'
